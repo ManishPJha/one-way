@@ -4,7 +4,7 @@ export default (err: any, req: any, res: any, next: any) => {
 
     err.statusCode = err.statusCode || 500 // internal server error
 
-    if (process.env.NODE_ENV === "DEVELOPMENT") {
+    if (process.env.NODE_ENV?.toString().trim() === "DEVELOPMENT") {
 
         return res.status(err.statusCode).json({
             success: false,
@@ -14,7 +14,7 @@ export default (err: any, req: any, res: any, next: any) => {
         })
     }
 
-    if (process.env.NODE_ENV === "PRODUCTION") {
+    if (process.env.NODE_ENV?.toString().trim() === "PRODUCTION") {
         let error = { ...err }
 
         error.message = err.message;
