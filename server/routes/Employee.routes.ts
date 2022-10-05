@@ -14,7 +14,7 @@ const router: IRouter = express.Router();
 
 router.route("/getAllEmployees").get(getAllEmployees)
 router.route("/addEmployee").post(createEmployee)
-router.route("/employee/:id")
+router.route("/:id")
     .get(getSingleEmployee)
     .put(updateEmployee)
     .delete(deleteEmployee)
