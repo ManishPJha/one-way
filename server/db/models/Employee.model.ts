@@ -13,6 +13,9 @@ module Constants {
 export class Employee {
   @prop({ type: String, required: true })
   public name!: string;
+  
+  @prop({ type: String, required: true })
+  public lastName!: string;
 
   @prop({ type: Date, required: true })
   public dob!: Date;

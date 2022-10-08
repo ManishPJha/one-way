@@ -1,4 +1,10 @@
-import { prop, getModelForClass, pre } from "@typegoose/typegoose";
+import {
+  prop,
+  getModelForClass,
+  pre,
+  DocumentType,
+  ReturnModelType,
+} from "@typegoose/typegoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import * as mongoose from "mongoose";
@@ -20,6 +26,12 @@ module Constants {
 })
 export class Operator {
   // Decorators
+  @prop({ type: String, required: [true, "Name is required."] })
+  public name!: string;
+
+  @prop({ type: String, required: [true, "Surname is required."] })
+  public lastName!: string;
+
   @prop({ type: String, required: [true, "Username is required."] })
   public username!: string;
 
@@ -34,30 +46,43 @@ export class Operator {
   public email!: string;
 
   public static async comparePasswords(
-    this: Operator,
+    this: ReturnModelType<typeof Operator>,
+    email: string,
     enteredPassword: string
   ) {
-    return await bcrypt.compare(enteredPassword, this.password);
+    const operator = await this.findOne({ email }).select({ password: 1 });
+
+    return await bcrypt.compare(enteredPassword, operator?.password!);
   }
 
-  public static async getJWTToken(this: Operator, id: string) {
-    return jwt.sign({ id: id }, process.env.JWT_SECRET_KEY!, {
-      expiresIn: process.env.JWT_EXPIRE_TIME!,
-    });
+  public static getJWTToken(id: mongoose.Types.ObjectId) {
+    if (id) {
+      return jwt.sign({ id: id }, process.env.JWT_SECRET_KEY!, {
+        expiresIn: process.env.JWT_EXPIRE_TIME!,
+      });
+    }
   }
 
-  public static async getPasswordResetToken(this: Operator) {
+  public static async getPasswordResetToken(
+    this: ReturnModelType<typeof Operator>,
+    email: string
+  ) {
     // generate token
     const resetToken = crypto.randomBytes(20).toString("hex");
 
-    // hash password reset token
-    this.resetPasswordToken = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
+    const operator = await this.findOne({ email: email });
 
-    // token expiry time
-    this.resetPasswordExpire = new Date(Date.now() + 30 * 60 * 1000);
+    if (operator) {
+      // hash password reset token
+      operator.resetPasswordToken = crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
+
+      // token expiry time
+      operator.resetPasswordExpire = new Date(Date.now() + 30 * 60 * 1000);
+      operator?.save({ validateBeforeSave: false });
+    }
 
     return resetToken;
   }
@@ -70,7 +95,7 @@ export class Operator {
   })
   public role!: Constants.Roles[];
 
-  @prop({ type: String, required: false })
+  @prop({ type: Object, required: false })
   public writes!: writesTypes;
 
   @prop({ type: Object, required: false })
