@@ -3,6 +3,3 @@ node_modules
 /*.log
 package-lock.*
 yarn.*
-.env
-.env.*
-*.env
