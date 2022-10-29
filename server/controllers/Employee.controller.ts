@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import cloudinary from "cloudinary";
 
 // Model
 import { EmployeeModel } from "../db/models/Employee.model";
@@ -55,10 +56,33 @@ const getSingleEmployee = async (
 
 const createEmployee = catchAsyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
+    let images = [];
+
+    if (typeof req.body.image === "string") {
+      images.push(req.body.image);
+    } else {
+      images = req.body.image;
+    }
+
+    let imageLinks = [];
+
+    for (let image of images) {
+      const uploader = await cloudinary.v2.uploader.upload(image, {
+        folder: "employees",
+      });
+      imageLinks.push({
+        public_id: uploader.public_id,
+        url: uploader.secure_url,
+      });
+    }
+
+    req.body.image = imageLinks;
+
     const Employee = await EmployeeModel.create(req.body);
 
     res.status(201).json({
       success: true,
+      data: Employee,
       message: `Employee added successfully with id ${Employee._id}`,
     });
   }

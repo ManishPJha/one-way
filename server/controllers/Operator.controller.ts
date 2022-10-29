@@ -17,7 +17,7 @@ interface OperatorTypes {
   image?: object;
   password?: string;
   username?: string;
-  role?: string
+  role?: string;
 }
 
 // Login
@@ -51,10 +51,19 @@ const loginOperator = catchAsyncErrorHandler(
 // Logout
 const logoutOperator = catchAsyncErrorHandler(
   async (req: any, res: Response, next: NextFunction) => {
-    res.cookie("token", null, {
-      expires: new Date(Date.now()),
-      httpOnly: true,
-    });
+    process.env.NODE_ENV === "DEVELOPMENT"
+      ? res.cookie("token", null, {
+          expires: new Date(Date.now()),
+          httpOnly: true,
+          // secure: true,
+          // sameSite: "none",
+        })
+      : res.cookie("token", null, {
+          expires: new Date(Date.now()),
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+        });
 
     res.status(200).json({
       success: true,
@@ -407,7 +416,8 @@ const updateOperator = catchAsyncErrorHandler(
       if (!isExistOperator)
         return next(new ErrorHandler("User not found with this id " + id, 403));
 
-      const { username, name, lastName, writes , email, role } : OperatorTypes = req.body;
+      const { username, name, lastName, writes, email, role }: OperatorTypes =
+        req.body;
 
       const Operator = await OperatorModel.findByIdAndUpdate(
         id,
